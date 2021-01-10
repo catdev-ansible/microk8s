@@ -1,0 +1,13 @@
+# Standards: 0.1
+---
+galaxy_info:
+  author: "catdev admin team <devoadminps@catdev.io>"
+  description: Install and onfigures a mikrok8s cluster
+  license: MIT
+  min_ansible_version: 2.8
+  platforms:
+    - name: Ubuntu
+      versions:
+        - bionic
+  galaxy_tags:
+dependencies: []

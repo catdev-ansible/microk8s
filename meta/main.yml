@@ -1,0 +1,13 @@
+# Standards: 0.1
+---
+galaxy_info:
+  author: "catdev DevOps <devops@catdev.io>"
+  description: Configure APT repositories and settings
+  license: MIT
+  min_ansible_version: 2.8
+  platforms:
+    - name: Ubuntu
+      versions:
+        - bionic
+  galaxy_tags:
+dependencies: []
