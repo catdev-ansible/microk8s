@@ -1,53 +1,53 @@
 ---
-- name: "install latest stable microk8s snap"
+- name: "Install latest stable microk8s snap"
   snap:
       name: microk8s
       channel: latest
       classic: "yes"
       state: present
   notify:
-      - enable snapd
-      - start snapd
-      - enable microk8s addons
+      - Enable snapd
+      - Start snapd
+      - Snable microk8s addons
 
-- name: "create alias k"
+- name: "Create alias k"
   command: snap alias microk8s.kubectl k
   register: k_alias
   changed_when: k_alias.stdout.find('Added') != -1
   when: microk8s_node_name == "node0"
 
-- name: "create alias kubectl"
+- name: "Create alias kubectl"
   command: snap alias microk8s.kubectl kubectl
   register: kubectl_alias
   changed_when: kubectl_alias.stdout.find('Added') != -1
   when: microk8s_node_name == "node0"
 
-- name: "create alias helm"
+- name: "Create alias helm"
   command: snap alias microk8s.helm3 helm
   register: helm_alias
   changed_when: helm_alias.stdout.find('Added') != -1
   when: microk8s_node_name == "node0"
 
-- name: "add node-1"
+- name: "Add node-1"
   shell: /snap/bin/microk8s.add-node | grep 10.0.0.2 | cut -d'/' -f2
   register: k8s_token_node_1
   changed_when: false
   when: microk8s_node_name == "node0"
 
-- name: "add node-2"
+- name: "Add node-2"
   shell: /snap/bin/microk8s.add-node | grep 10.0.0.2 | cut -d'/' -f2
   register: k8s_token_node_2
   changed_when: false
   when: microk8s_node_name == "node0"
 
-- name: "add k8s token to dummy host"
+- name: "Add k8s token to dummy host"
   add_host:
       name: "K8S_TOKEN_HOLDER"
       token_node_1: "{{ k8s_token_node_1.stdout }}"
       token_node_2: "{{ k8s_token_node_2.stdout }}"
   when: microk8s_node_name == "node0"
 
-- name: "join node-1"
+- name: "Join node-1"
   shell: >
       /snap/bin/microk8s.join
       10.0.0.2:25000/{{ hostvars['K8S_TOKEN_HOLDER']['token_node_1'] }}
@@ -55,7 +55,7 @@
     - hostvars['K8S_TOKEN_HOLDER']['token_node_1'] != ""
     - microk8s_node_name == "node1"
 
-- name: "join node-2"
+- name: "Join node-2"
   shell: >
       /snap/bin/microk8s.join
       10.0.0.2:25000/{{ hostvars['K8S_TOKEN_HOLDER']['token_node_2'] }}
@@ -63,13 +63,13 @@
     - hostvars['K8S_TOKEN_HOLDER']['token_node_2'] != ""
     - microk8s_node_name == "node2"
 
-- name: "check metallb addon"
+- name: "Check metallb addon"
   command: /snap/bin/microk8s.status -a metallb
   register: metallb_status
   changed_when: false
   when: microk8s_node_name == "node0"
 
-- name: "enable metallb addon"
+- name: "Enable metallb addon"
   shell: >
       echo "{{ loadbalancer_ip }}-{{ loadbalancer_ip }}" |
       /snap/bin/microk8s.enable metallb
@@ -77,14 +77,14 @@
     - metallb_status.stdout == "disabled"
     - microk8s_node_name == "node0"
 
-- name: "add ingress-nginx helm repo"
+- name: "Add ingress-nginx helm repo"
   command: >
       /snap/bin/helm repo add
       ingress-nginx https://kubernetes.github.io/ingress-nginx
   changed_when: false
   when: microk8s_node_name == "node0"
 
-- name: "check for ingress-nginx helm release"
+- name: "Check for ingress-nginx helm release"
   command: /snap/bin/helm status ingress-nginx
   register: ingress_status
   failed_when: false
@@ -92,7 +92,7 @@
   ignore_errors: "true"
   when: microk8s_node_name == "node0"
 
-- name: "install ingress-nginx helm chart"
+- name: "Install ingress-nginx helm chart"
   command: >
       /snap/bin/helm install ingress-nginx ingress-nginx/ingress-nginx
   when:
