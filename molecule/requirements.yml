@@ -1,0 +1,3 @@
+- src: https://github.com/catdev-ansible/apt
+  scm: git
+  version: master
