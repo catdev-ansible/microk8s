@@ -1,2 +1,2 @@
-# Count up from node1 to node<n>
-microk8s_node_name: "node1"
+# Count up from node0 to node<n>
+microk8s_node_name: "node0"
