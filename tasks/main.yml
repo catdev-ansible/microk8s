@@ -1,13 +1,100 @@
-# Standards: 0.1
 ---
-galaxy_info:
-  author: "catdev admin team <devoadminps@catdev.io>"
-  description: Install and onfigures a mikrok8s cluster
-  license: MIT
-  min_ansible_version: 2.8
-  platforms:
-    - name: Ubuntu
-      versions:
-        - bionic
-  galaxy_tags:
-dependencies: []
+- name: "install latest stable microk8s snap"
+  snap:
+      name: microk8s
+      channel: latest
+      classic: "yes"
+      state: present
+  notify:
+      - enable snapd
+      - start snapd
+      - enable microk8s addons
+
+- name: "create alias k"
+  command: snap alias microk8s.kubectl k
+  register: k_alias
+  changed_when: k_alias.stdout.find('Added') != -1
+  when: microk8s_node_name == "node1"
+
+- name: "create alias kubectl"
+  command: snap alias microk8s.kubectl kubectl
+  register: kubectl_alias
+  changed_when: kubectl_alias.stdout.find('Added') != -1
+  when: microk8s_node_name == "node1"
+
+- name: "create alias helm"
+  command: snap alias microk8s.helm3 helm
+  register: helm_alias
+  changed_when: helm_alias.stdout.find('Added') != -1
+  when: microk8s_node_name == "node1"
+
+- name: "add node-2"
+  shell: /snap/bin/microk8s.add-node | grep 10.0.0.2 | cut -d'/' -f2
+  register: k8s_token_node_2
+  changed_when: false
+  when: microk8s_node_name == "node1"
+
+- name: "add node-3"
+  shell: /snap/bin/microk8s.add-node | grep 10.0.0.2 | cut -d'/' -f2
+  register: k8s_token_node_3
+  changed_when: false
+  when: microk8s_node_name == "node1"
+
+- name: "add k8s token to dummy host"
+  add_host:
+      name: "K8S_TOKEN_HOLDER"
+      token_node_2: "{{ k8s_token_node_2.stdout }}"
+      token_node_3: "{{ k8s_token_node_3.stdout }}"
+  when: microk8s_node_name == "node1"
+
+- name: "join node-2"
+  shell: >
+      /snap/bin/microk8s.join
+      10.0.0.2:25000/{{ hostvars['K8S_TOKEN_HOLDER']['token_node_2'] }}
+  when:
+    - hostvars['K8S_TOKEN_HOLDER']['token_node_2'] != ""
+    - microk8s_node_name == "node2"
+
+- name: "join node-3"
+  shell: >
+      /snap/bin/microk8s.join
+      10.0.0.2:25000/{{ hostvars['K8S_TOKEN_HOLDER']['token_node_3'] }}
+  when:
+    - hostvars['K8S_TOKEN_HOLDER']['token_node_3'] != ""
+    - microk8s_node_name == "node3"
+
+- name: "check metallb addon"
+  command: /snap/bin/microk8s.status -a metallb
+  register: metallb_status
+  changed_when: false
+  when: microk8s_node_name == "node1"
+
+- name: "enable metallb addon"
+  shell: >
+      echo "{{ loadbalancer_ip }}-{{ loadbalancer_ip }}" |
+      /snap/bin/microk8s.enable metallb
+  when:
+    - metallb_status.stdout == "disabled"
+    - microk8s_node_name == "node1"
+
+- name: "add ingress-nginx helm repo"
+  command: >
+      /snap/bin/helm repo add
+      ingress-nginx https://kubernetes.github.io/ingress-nginx
+  changed_when: false
+  when: microk8s_node_name == "node1"
+
+- name: "check for ingress-nginx helm release"
+  command: /snap/bin/helm status ingress-nginx
+  register: ingress_status
+  failed_when: false
+  changed_when: false
+  ignore_errors: "true"
+  when: microk8s_node_name == "node1"
+
+- name: "install ingress-nginx helm chart"
+  command: >
+      /snap/bin/helm install ingress-nginx ingress-nginx/ingress-nginx
+  when:
+    - ingress_status.rc != 0
+    - microk8s_node_name == "node1"

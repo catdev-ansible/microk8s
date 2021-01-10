@@ -1,0 +1,18 @@
+---
+- name: "Enable snapd"
+  service:
+      name: snapd
+      enabled: "yes"
+
+- name: "Start snapd"
+  service:
+      name: snapd
+      state: started
+
+- name: "Enable microk8s addons"
+  command: /snap/bin/microk8s.enable "{{ item }}"
+  loop:
+      - dns
+      - helm3
+      - ingress
+      - storage
