@@ -69,14 +69,9 @@
   changed_when: false
   when: microk8s_node_name == "node0"
 
-- name: Gather hcloud load_balancer infos
-  hcloud_load_balancer_info:
-  register: lb-output
-
 - name: "Enable metallb addon"
   shell: >
-      echo "{{ lb-output.ipv4_address }}-{{ lb-output.ipv4_address }}" |
-      /snap/bin/microk8s.enable metallb
+      /snap/bin/microk8s.enable metallb:{{ loadbalancer_ip_range }}
   when:
     - metallb_status.stdout == "disabled"
     - microk8s_node_name == "node0"

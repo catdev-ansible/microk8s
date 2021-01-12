@@ -1,2 +1,4 @@
 # Count up from node0 to node<n>
 microk8s_node_name: "node0"
+
+loadbalancer_ip_range: 1.1.1.1-2.2.2.2
