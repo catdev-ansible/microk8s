@@ -14,86 +14,13 @@
   command: snap alias microk8s.kubectl k
   register: k_alias
   changed_when: k_alias.stdout.find('Added') != -1
-  when: microk8s_node_name == "node0"
 
 - name: "Create alias kubectl"
   command: snap alias microk8s.kubectl kubectl
   register: kubectl_alias
   changed_when: kubectl_alias.stdout.find('Added') != -1
-  when: microk8s_node_name == "node0"
 
 - name: "Create alias helm"
   command: snap alias microk8s.helm3 helm
   register: helm_alias
   changed_when: helm_alias.stdout.find('Added') != -1
-  when: microk8s_node_name == "node0"
-
-- name: "Add node-1"
-  shell: /snap/bin/microk8s.add-node | grep 10.0.0.2 | cut -d'/' -f2
-  register: k8s_token_node_1
-  changed_when: false
-  when: microk8s_node_name == "node0"
-
-- name: "Add node-2"
-  shell: /snap/bin/microk8s.add-node | grep 10.0.0.2 | cut -d'/' -f2
-  register: k8s_token_node_2
-  changed_when: false
-  when: microk8s_node_name == "node0"
-
-- name: "Add k8s token to dummy host"
-  add_host:
-      name: "K8S_TOKEN_HOLDER"
-      token_node_1: "{{ k8s_token_node_1.stdout }}"
-      token_node_2: "{{ k8s_token_node_2.stdout }}"
-  when: microk8s_node_name == "node0"
-
-- name: "Join node-1"
-  shell: >
-      /snap/bin/microk8s.join
-      10.0.0.2:25000/{{ hostvars['K8S_TOKEN_HOLDER']['token_node_1'] }}
-  when:
-    - hostvars['K8S_TOKEN_HOLDER']['token_node_1'] != ""
-    - microk8s_node_name == "node1"
-
-- name: "Join node-2"
-  shell: >
-      /snap/bin/microk8s.join
-      10.0.0.2:25000/{{ hostvars['K8S_TOKEN_HOLDER']['token_node_2'] }}
-  when:
-    - hostvars['K8S_TOKEN_HOLDER']['token_node_2'] != ""
-    - microk8s_node_name == "node2"
-
-- name: "Check metallb addon"
-  command: /snap/bin/microk8s.status -a metallb
-  register: metallb_status
-  changed_when: false
-  when: microk8s_node_name == "node0"
-
-- name: "Enable metallb addon"
-  shell: >
-      /snap/bin/microk8s.enable metallb:{{ loadbalancer_ip_range }}
-  when:
-    - metallb_status.stdout == "disabled"
-    - microk8s_node_name == "node0"
-
-- name: "Add ingress-nginx helm repo"
-  command: >
-      /snap/bin/helm repo add
-      ingress-nginx https://kubernetes.github.io/ingress-nginx
-  changed_when: false
-  when: microk8s_node_name == "node0"
-
-- name: "Check for ingress-nginx helm release"
-  command: /snap/bin/helm status ingress-nginx
-  register: ingress_status
-  failed_when: false
-  changed_when: false
-  ignore_errors: "true"
-  when: microk8s_node_name == "node0"
-
-- name: "Install ingress-nginx helm chart"
-  command: >
-      /snap/bin/helm install ingress-nginx ingress-nginx/ingress-nginx
-  when:
-    - ingress_status.rc != 0
-    - microk8s_node_name == "node0"
