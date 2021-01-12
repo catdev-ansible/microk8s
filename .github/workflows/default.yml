@@ -10,10 +10,39 @@ on:
       - master
 
 jobs:
-  molecule:
-    runs-on: ubuntu-latest
+  lint:
+    runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - name: checkout
+        uses: actions/checkout@v2
         with:
           path: "${{ github.repository }}"
-      - uses: gofrolist/molecule-action@v2
+      - name: molecule
+        uses: robertdebock/molecule-action@2.6.3
+        with:
+          command: lint
+  test:
+    needs:
+      - lint
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        image:
+          - alpine
+          - amazonlinux
+          - debian
+          - centos
+          - fedora
+          - opensuse
+          - ubuntu
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          path: "${{ github.repository }}"
+      - name: molecule
+        uses: robertdebock/molecule-action@2.6.8
+        with:
+          image: "${{ matrix.image }}"
+          options: parallel
+          scenario: my_specific_scenario
