@@ -8,7 +8,7 @@
   notify:
       - Enable snapd
       - Start snapd
-      - Snable microk8s addons
+      - Enable microk8s addons
 
 - name: "Create alias k"
   command: snap alias microk8s.kubectl k
