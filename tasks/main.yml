@@ -10,6 +10,13 @@
       - Start snapd
       - Enable microk8s addons
 
+- name: Update /etc/environment for snap apps
+  lineinfile:
+    dest: /etc/environment
+    line: "export PATH=/bin/snap:$PATH"
+    owner: root
+  become: true
+
 - name: "Create alias k"
   command: snap alias microk8s.kubectl k
   register: k_alias
